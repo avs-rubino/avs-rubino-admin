@@ -29,9 +29,23 @@ const GalleryManager = () => {
     fetchGallery();
   }, []);
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
   const handleUpload = async (e) => {
-    const selectedFile = e.target.files[0];
+    const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
+
+    if (!selectedFile.type.startsWith('image/')) {
+      toast.error('Seleziona un file immagine valido (PNG, JPEG, WebP, ecc.)');
+      e.target.value = '';
+      return;
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      toast.error('Il file supera la dimensione massima consentita di 5MB');
+      e.target.value = '';
+      return;
+    }
 
     setUploading(true);
     const formData = new FormData();
@@ -57,6 +71,7 @@ const GalleryManager = () => {
       toast.error('Caricamento fallito. Riprova.');
     } finally {
       setUploading(false);
+      if (e.target) e.target.value = '';
     }
   };
 

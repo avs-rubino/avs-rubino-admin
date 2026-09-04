@@ -2,7 +2,9 @@ import { createContext, useEffect, useState } from 'react';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
@@ -17,8 +19,24 @@ export function AuthProvider({ children }) {
     return signInWithEmailAndPassword(auth, email, password);
   }
 
+  async function loginWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    return signInWithPopup(auth, provider);
+  }
+
   function logout() {
     return signOut(auth);
+  }
+
+  async function refreshUserClaims() {
+    if (auth.currentUser) {
+      const tokenResult = await auth.currentUser.getIdTokenResult(true);
+      const userRole = tokenResult.claims.role || 'Utente_Normale';
+      setRole(userRole);
+      return userRole;
+    }
+    return null;
   }
 
   useEffect(() => {
@@ -26,7 +44,9 @@ export function AuthProvider({ children }) {
       if (user) {
         try {
           const tokenResult = await user.getIdTokenResult();
-          setRole(tokenResult.claims.role || null);
+          // Paradigma Zero-Trust: se non è presente un claim 'role', consideriamo 'Utente_Normale'
+          const assignedRole = tokenResult.claims.role || 'Utente_Normale';
+          setRole(assignedRole);
           setCurrentUser(user);
         } catch (error) {
           console.error("Error fetching token result:", error);
@@ -47,7 +67,9 @@ export function AuthProvider({ children }) {
     currentUser,
     role,
     login,
+    loginWithGoogle,
     logout,
+    refreshUserClaims,
     loading
   };
 

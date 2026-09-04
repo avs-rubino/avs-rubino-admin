@@ -2,6 +2,8 @@ node_modules
 dist
 dist-ssr
 *.local
+coverage
+junit.xml
 #env vars
 .env
 .env.*

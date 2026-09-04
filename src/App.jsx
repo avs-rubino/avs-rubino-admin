@@ -21,6 +21,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute requireSuperAdmin={true}>
+                <Dashboard defaultTab="users" />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

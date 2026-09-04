@@ -23,6 +23,15 @@ export const GIORNI_FULL = {
 
 export const emptySchedule = () => ({ defaults: [], overrides: [] });
 
+export const MIDDAY_THRESHOLD_MINUTES = 750; // 12:30 in minuti
+
+export const isMorning = (timeStr) => {
+  if (!timeStr) return false;
+  const parts = timeStr.split(':');
+  const minutes = parseInt(parts[0], 10) * 60 + (parseInt(parts[1], 10) || 0);
+  return minutes < MIDDAY_THRESHOLD_MINUTES;
+};
+
 export const parseSchedule = (val) => {
   if (val && typeof val === 'object') {
     return {
@@ -66,6 +75,10 @@ const ScheduleEditor = ({ value, onChange }) => {
   const addDefault = () => {
     if (defDays.length === 0) { toast.error('Seleziona almeno un giorno'); return; }
     if (!defClosed && !defStart) { toast.error("L'orario di inizio è obbligatorio"); return; }
+    if (!defClosed && defStart && defEnd && defEnd <= defStart) {
+      toast.error("L'orario di fine deve essere successivo all'orario di inizio");
+      return;
+    }
 
     const entry = {
       id: Date.now().toString(),
@@ -82,7 +95,15 @@ const ScheduleEditor = ({ value, onChange }) => {
   // ---- ADD override ----
   const addOverride = () => {
     if (!ovrDateFrom) { toast.error('Seleziona almeno la data di inizio'); return; }
+    if (ovrDateTo && ovrDateTo < ovrDateFrom) {
+      toast.error("La data di fine non può essere precedente alla data di inizio");
+      return;
+    }
     if (!ovrClosed && !ovrStart) { toast.error("L'orario di inizio è obbligatorio"); return; }
+    if (!ovrClosed && ovrStart && ovrEnd && ovrEnd <= ovrStart) {
+      toast.error("L'orario di fine deve essere successivo all'orario di inizio");
+      return;
+    }
 
     const entry = {
       id: Date.now().toString(),
@@ -145,11 +166,11 @@ const ScheduleEditor = ({ value, onChange }) => {
                       </span>
                       {entry.startTime && (
                         <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-full ${
-                          (parseInt(entry.startTime.split(':')[0]) * 60 + parseInt(entry.startTime.split(':')[1] || 0)) < 750
+                          isMorning(entry.startTime)
                             ? 'bg-amber-100 text-amber-800 border border-amber-200/50'
                             : 'bg-indigo-100 text-indigo-800 border border-indigo-200/50'
                         }`}>
-                          {(parseInt(entry.startTime.split(':')[0]) * 60 + parseInt(entry.startTime.split(':')[1] || 0)) < 750 ? 'Mattina' : 'Pomeriggio'}
+                          {isMorning(entry.startTime) ? 'Mattina' : 'Pomeriggio'}
                         </span>
                       )}
                     </div>
