@@ -1,8 +1,8 @@
 # AVS Rubino - Admin Panel
 
-Applicazione web riservata allo staff dell'Ambulatorio Veterinario Specialistico Rubino. Fornisce un'interfaccia protetta per gestire le configurazioni cliniche, come l'inserimento di avvisi sul sito pubblico, l'upload di immagini nella galleria Cloud Storage, e la gestione CRUD delle variazioni d'orario (eccezioni).
+Pannello di gestione riservato al personale dell'Ambulatorio Veterinario Specialistico Rubino. Fornisce un'interfaccia protetta per la gestione degli orari clinici, delle eccezioni straordinarie, degli avvisi sul sito web e degli utenti di backoffice.
 
-## 🏛️ Ecosistema AVS Rubino
+## Ecosistema AVS Rubino
 
 Questo repository è uno dei 5 moduli dell'ecosistema digitale dell'Ambulatorio Veterinario Specialistico Rubino. Panoramica completa, architettura e flussi: **[github.com/avs-rubino](https://github.com/avs-rubino)**
 
@@ -18,60 +18,95 @@ Questo repository è uno dei 5 moduli dell'ecosistema digitale dell'Ambulatorio 
 
 ---
 
-## 🚀 Tecnologie Principali
-- **Core:** React, Vite
-- **Styling:** Tailwind CSS
-- **Autenticazione:** Firebase Auth
-- **Iconografia:** Lucide React
-- **Hosting & Deploy:** Firebase Hosting
+## Architettura e Tecnologie
 
-## 🔐 Controllo Accessi (RBAC)
-L'accesso al pannello è rigorosamente limitato tramite Firebase Authentication. 
-Le azioni di modifica sono filtrate in base al ruolo assegnato al token dell'utente (Custom Claims):
-- **Super_Admin**: Controllo totale su tutte le impostazioni.
-- **Editor_Admin**: Permessi di scrittura per la gestione degli orari.
+- **Framework**: React 18 (SPA)
+- **Build Tool**: Vite 5
+- **Styling**: Tailwind CSS 3
+- **Autenticazione**: Firebase Auth con Custom Claims (RBAC)
+- **HTTP Client**: Axios con request interceptor per Bearer Token
+- **Feedback UI**: React Hot Toast
+- **Testing**: Vitest, React Testing Library, jsdom
+- **Hosting**: Firebase Hosting
 
-## ⏱️ Gestione Orari & Resilienza UI (`ScheduleEditor`)
-Il componente `ScheduleEditor` si interfaccia con il backend REST per la gestione degli orari predefiniti e delle eccezioni:
-- **Parsing Difensivo (`parseSchedule`)**: Garantisce la coerenza degli array `defaults` e `overrides`, prevenendo errori di renderizzazione a fronte di risposte parziali o modifiche remote (es. sovrascritture o pulizie silenti dal backend/PWA).
-- **Ordinamento Cronologico (`sortedOverrides`)**: Le eccezioni orarie vengono ordinate automaticamente per data (`dateFrom`) tramite `useMemo`, assicurando una consultazione chiara per il personale clinico.
-- **Formattazione Data Robusta (`formatDate`)**: Protegge l'interfaccia da date corrotte o non conformi, evitando il rendering della stringa `Invalid Date` con fallback pulito (`—`).
+## Controllo degli Accessi (RBAC)
 
+L'accesso alle viste operative è vincolato allo stato di autenticazione e ai ruoli definiti nei custom claims del token JWT:
+- **Super_Admin**: Accesso completo a gestione utenti, orari e avvisi.
+- **Editor_Admin**: Accesso limitato all'aggiornamento di orari ed eccezioni.
 
-## 📋 Prerequisiti
-- **Node.js:** v18.x o superiore
-- **npm:** v8.x o superiore
-- **Firebase CLI:** (opzionale, per test di deploy locale)
+## Resilienza UI (`ScheduleEditor`)
 
-## 🛠️ Installazione e Avvio Locale
+- **Parsing difensivo**: Normalizzazione automatica delle eccezioni e degli orari settimanali di default contro strutture dati parziali o assenti.
+- **Ordinamento cronologico**: Ordinamento automatico per data (`dateFrom`) via `useMemo`.
+- **Formattazione robusta**: Gestione sicura di date mancanti o non conformi evitando render di `Invalid Date`.
 
-1. Clona il repository e installa le librerie:
+## Prerequisiti
+
+- **Node.js**: >= 18.x
+- **npm**: >= 8.x
+
+## Setup Locale
+
+1. Installazione delle dipendenze:
    ```bash
    npm install
    ```
 
-2. Configura le variabili d'ambiente:
-   Crea il file `.env` copiando il template di riferimento. 
+2. Configurazione dell'ambiente:
    ```bash
    cp .env.example .env
    ```
-   Compila le chiavi API del progetto Firebase per inizializzare il client auth.
 
-3. Esegui in ambiente di sviluppo:
+3. Avvio del server di sviluppo:
    ```bash
    npm run dev
    ```
-   L'applicativo partirà all'indirizzo `http://localhost:5173`.
+   L'applicazione è accessibile all'indirizzo `http://localhost:5173`.
 
-## 🏗️ Build per la Produzione
+## Variabili d'Ambiente
 
-Per produrre una build statica minimizzata:
+Le credenziali e gli endpoint devono essere definiti nel file `.env`:
+
+| Variabile | Tipo | Descrizione | Default / Esempio | Richiesta |
+|---|---|---|---|---|
+| `VITE_API_URL` | String | URL base del microservizio backend REST | `http://localhost:5000` | Sì |
+| `VITE_FIREBASE_API_KEY` | String | API Key del progetto Firebase | - | Sì |
+| `VITE_FIREBASE_AUTH_DOMAIN` | String | Dominio di autenticazione Firebase | `project.firebaseapp.com` | Sì |
+| `VITE_FIREBASE_PROJECT_ID` | String | ID del progetto Google Cloud / Firebase | `vet-clinics-493413` | Sì |
+| `VITE_FIREBASE_STORAGE_BUCKET` | String | Bucket per l'upload di file multimediali | `project.appspot.com` | Sì |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | String | Sender ID Firebase Messaging | - | Sì |
+| `VITE_FIREBASE_APP_ID` | String | ID dell'applicazione Firebase Web | - | Sì |
+
+## Script Disponibili
+
+| Comando | Descrizione |
+|---|---|
+| `npm run dev` | Avvia il server di sviluppo locale |
+| `npm run build` | Compila l'applicazione per la produzione nella directory `dist/` |
+| `npm run preview` | Esegue un server locale per testare la build generata |
+| `npm test` | Esegue la suite di test Vitest in modalità singola run |
+| `npm run test:watch` | Avvia la suite di test in modalità osservatore continuo |
+| `npm run test:coverage` | Genera il report di copertura con provider v8 |
+
+## Testing
+
+La test suite automatizzata sfrutta **Vitest** con ambiente DOM simulato tramite `jsdom`:
+
 ```bash
-npm run build
+npm test
 ```
-L'output si troverà nella directory `dist/`.
 
-## 🔄 Integrazione Continua (CI/CD)
+### Mock di Firebase Auth
+Le suite di test sono isolate dall'infrastruttura di autenticazione remota. In `src/setupTests.js` è configurato il mock globale del modulo `firebase/auth`, che intercetta i metodi `getAuth`, `signInWithEmailAndPassword`, `signOut` e `onAuthStateChanged`, consentendo l'emulazione deterministica di utenti autenticati, token JWT scaduti o ruoli RBAC eterogenei.
 
-Il deployment è gestito in modalità serverless su **Firebase Hosting** (Target: `vet-clinics-admin-panel`).
-Al push sul branch `main`, GitHub Actions (`.github/workflows/deploy.yml`) si occupa automaticamente della build React e della distribuzione dell'artefatto statico sui CDN globali di Firebase.
+Aree coperte:
+- `src/__tests__/ProtectedRoute.test.jsx`: Protezione delle rotte basata su ruoli (Super_Admin, Editor_Admin) e gestione degli stati non autenticati.
+- `src/__tests__/ScheduleEditor.test.jsx`: Parsing delle eccezioni orarie, mutazioni stato e persistenza tramite chiamate API.
+
+## CI/CD e Deployment
+
+Il rilascio in produzione è gestito tramite GitHub Actions (`.github/workflows/deploy.yml`):
+- All'unione del codice sul ramo `main`, il runner automatizza la compilazione e distribuisce la cartella `dist/` su **Firebase Hosting** (Target: `vet-clinics-admin-panel`).
+
+<!-- ecosystem: avs-rubino -->
